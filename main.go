@@ -11,6 +11,8 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	"github.com/spf13/cobra"
 )
 
 func luminancePercent(c color.Color) float64 {
@@ -48,10 +50,22 @@ func recolor(img image.Image) image.Image {
 	return recolored
 }
 
-func main() {
-	f, err := os.Open("raw.jpg")
+var cmd = &cobra.Command{
+	Use:   "go-luminance-filter raw.jpg -o recolored.jpg -t 0,50 -c 80C9AC,221F20",
+	Short: "Edit images by recoloring pixels by luminance",
+	Args:  cobra.ExactArgs(1),
+	Run:   run,
+}
+
+func init() {
+	// [TODO] Add flag params
+}
+
+func run(cmd *cobra.Command, args []string) {
+	inputPath := args[0]
+	f, err := os.Open(inputPath)
 	if err != nil {
-		log.Fatalf("error loading raw.jpg: %v", err)
+		log.Fatalf("error loading %s: %v", inputPath, err)
 	}
 	defer f.Close()
 
@@ -85,5 +99,11 @@ func main() {
 	recolored := recolor(img)
 	if err := jpeg.Encode(out, recolored, nil); err != nil {
 		log.Fatalf("error outputting recolored image: %v", err)
+	}
+}
+
+func main() {
+	if err := cmd.Execute(); err != nil {
+		log.Fatalf("error running luminance filter: %v", err)
 	}
 }
