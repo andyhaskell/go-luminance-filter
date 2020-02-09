@@ -49,6 +49,7 @@ func parseThresholdPair(lumStr, colorStr string) (*luminanceThreshold, error) {
 		R: uint8((colorHex & 0xFF0000) >> 16),
 		G: uint8((colorHex & 0x00FF00) >> 8),
 		B: uint8((colorHex & 0x0000FF) >> 0),
+		A: 255,
 	}
 	return &luminanceThreshold{luminancePercent: luminancePercent, color: c}, nil
 }
