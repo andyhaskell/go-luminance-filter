@@ -19,13 +19,14 @@ func luminancePercent(c color.Color) float64 {
 	return redPercent*0.2126 + greenPercent*0.7152 + bluePercent*0.0722
 }
 
+var (
+	charcoal  = color.RGBA{R: 34, G: 31, B: 32, A: 255}
+	blueGreen = color.RGBA{R: 128, G: 201, B: 172, A: 255}
+)
+
 func recolor(img image.Image) image.Image {
 	b := img.Bounds()
 	recolored := image.NewRGBA(b)
-
-	// Add color.Color variables for the colors we're recoloring to
-	charcoal := color.RGBA{R: 34, G: 31, B: 32, A: 255}
-	blueGreen := color.RGBA{R: 128, G: 201, B: 172, A: 255}
 
 	for y := b.Min.Y; y < b.Max.Y; y++ {
 		for x := b.Min.X; x < b.Max.X; x++ {
