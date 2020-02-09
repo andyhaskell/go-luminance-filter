@@ -20,11 +20,6 @@ func luminancePercent(c color.Color) float64 {
 	return redPercent*0.2126 + greenPercent*0.7152 + bluePercent*0.0722
 }
 
-var (
-	charcoal  = color.RGBA{R: 34, G: 31, B: 32, A: 255}
-	blueGreen = color.RGBA{R: 128, G: 201, B: 172, A: 255}
-)
-
 func recolor(img image.Image, thresholds []luminanceThreshold) image.Image {
 	b := img.Bounds()
 	recolored := image.NewRGBA(b)
@@ -36,7 +31,7 @@ func recolor(img image.Image, thresholds []luminanceThreshold) image.Image {
 			var colorPicked bool
 			for i := len(thresholds) - 1; i >= 0; i-- {
 				thresholdLuminance := float64(thresholds[i].luminancePercent)
-				if luminancePercent(color) > thresholdLuminance {
+				if luminancePercent(color) >= thresholdLuminance {
 					recolored.Set(x, y, thresholds[i].color)
 					colorPicked = true
 					break

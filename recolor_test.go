@@ -8,14 +8,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	black     = color.RGBA{}
+	white     = color.RGBA{R: 255, G: 255, B: 255}
+	violet    = color.RGBA{R: 255, G: 0, B: 255}
+	charcoal  = color.RGBA{R: 34, G: 31, B: 32, A: 255}
+	blueGreen = color.RGBA{R: 128, G: 201, B: 172, A: 255}
+)
+
 func TestLuminance(t *testing.T) {
-	black := color.RGBA{}
 	assert.InDelta(t, 0, luminancePercent(black), 0.01)
-
-	white := color.RGBA{R: 255, G: 255, B: 255}
 	assert.InDelta(t, 100, luminancePercent(white), 0.01)
-
-	violet := color.RGBA{R: 255, G: 0, B: 255}
 	assert.InDelta(t, 28.48, luminancePercent(violet), 0.01)
 }
 
@@ -54,8 +57,11 @@ func assertSameColor(t *testing.T, exp, got color.Color) bool {
 	return true
 }
 
-func TestRecolor(t *testing.T) {
-	recolored := recolor(threeByThreeImg)
+func TestRecolorTwoThresholds(t *testing.T) {
+	recolored := recolor(threeByThreeImg, []luminanceThreshold{
+		{luminancePercent: 0, color: blueGreen},
+		{luminancePercent: 50, color: charcoal},
+	})
 
 	expectedColors := [][]color.Color{
 		{blueGreen, blueGreen, blueGreen},
@@ -70,4 +76,38 @@ func TestRecolor(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestRecolorThreeThresholds(t *testing.T) {
+	recolored := recolor(threeByThreeImg, []luminanceThreshold{
+		{luminancePercent: 0, color: blueGreen},
+		{luminancePercent: 50, color: charcoal},
+		{luminancePercent: 75, color: violet},
+	})
+
+	expectedColors := [][]color.Color{
+		{blueGreen, blueGreen, blueGreen},
+		{blueGreen, charcoal, charcoal},
+		{violet, violet, violet},
+	}
+	for y := 0; y < 3; y++ {
+		for x := 0; x < 3; x++ {
+			if !assertSameColor(t, expectedColors[y][x], recolored.At(x, y)) {
+				t.Logf("color mismatched at pixel (%d, %d)", x, y)
+				return
+			}
+		}
+	}
+}
+
+func TestRecolorPanic(t *testing.T) {
+	// This should panic because the pixels darker than 40% luminance don't
+	// match any of the luminance thresholds
+	assert.Panics(t, func() {
+		recolor(threeByThreeImg, []luminanceThreshold{
+			{luminancePercent: 40, color: blueGreen},
+			{luminancePercent: 50, color: charcoal},
+			{luminancePercent: 75, color: violet},
+		})
+	})
 }
