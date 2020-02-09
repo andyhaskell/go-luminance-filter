@@ -22,7 +22,12 @@ var cmd = &cobra.Command{
 }
 
 func init() {
-	// [TODO] Add flag params
+	cmd.Flags().StringP(
+		"output",
+		"o",
+		"recolored.jpg",
+		"name of the file to output recolored image to",
+	)
 }
 
 // shouldOutputToFile checks whether we should output our recolored image to
@@ -56,16 +61,21 @@ func run(cmd *cobra.Command, args []string) {
 	}
 	defer f.Close()
 
+	outFilepath, err := cmd.Flags().GetString("output")
+	if err != nil {
+		log.Fatalf("error getting output file path: %v", err)
+	}
+
 	img, _, err := image.Decode(f)
 	if err != nil {
 		log.Fatalf("error decoding file to an Image: %v", err)
 	}
 
-	if !shouldOutputToFile("recolored.jpg") {
+	if !shouldOutputToFile(outFilepath) {
 		return
 	}
 
-	out, err := os.Create("recolored.jpg")
+	out, err := os.Create(outFilepath)
 	if err != nil {
 		log.Fatalf("error creating output file recolored.jpg: %v", err)
 	}
