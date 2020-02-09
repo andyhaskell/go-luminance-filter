@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// luminancePercent calculates the relative luminance of a pixel,
 func luminancePercent(c color.Color) float64 {
 	r, g, b, _ := c.RGBA()
 
@@ -61,6 +62,29 @@ func init() {
 	// [TODO] Add flag params
 }
 
+// shouldOutputToFile checks whether we should output our recolored image to
+// the filepath passed in. If the file exists, then the user is prompted to
+// decide whether to replace it. If an unexpected error occurs, then the error
+// is fatally logged.
+func shouldOutputToFile(path string) bool {
+	if _, err := os.Stat(path); err != nil && !os.IsNotExist(err) {
+		log.Fatalf("unexpected error checking if recolored.jpg already exists")
+	} else if err == nil {
+		fmt.Println("recolored.jpg already exists. Replace it? (y/n)")
+
+		replace, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		if err != nil {
+			log.Fatalf(
+				"unexpected error reading whether to replace the file: %v",
+				err,
+			)
+		} else if strings.TrimRight(strings.ToLower(replace), "\n") != "y" {
+			return false
+		}
+	}
+	return true
+}
+
 func run(cmd *cobra.Command, args []string) {
 	inputPath := args[0]
 	f, err := os.Open(inputPath)
@@ -74,20 +98,8 @@ func run(cmd *cobra.Command, args []string) {
 		log.Fatalf("error decoding file to an Image: %v", err)
 	}
 
-	if _, err := os.Stat("recolored.jpg"); err != nil && !os.IsNotExist(err) {
-		log.Fatalf("unexpected error checking if recolored.jpg already exists")
-	} else if err == nil {
-		fmt.Println("recolored.jpg already exists. Replace it? (y/n)")
-
-		replace, err := bufio.NewReader(os.Stdin).ReadString('\n')
-		if err != nil {
-			log.Fatalf(
-				"unexpected error reading whether to replace the file: %v",
-				err,
-			)
-		} else if strings.TrimRight(strings.ToLower(replace), "\n") != "y" {
-			return
-		}
+	if !shouldOutputToFile("recolored.jpg") {
+		return
 	}
 
 	out, err := os.Create("recolored.jpg")
