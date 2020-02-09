@@ -15,7 +15,7 @@ import (
 )
 
 var cmd = &cobra.Command{
-	Use:   "go-luminance-filter raw.jpg -o recolored.jpg -t 0,50 -c 80C9AC,221F20",
+	Use:   "go-luminance-filter raw.jpg -o recolored.jpg -t 0,000000,50,FFFFFF",
 	Short: "Edit images by recoloring pixels by luminance",
 	Args:  cobra.ExactArgs(1),
 	Run:   run,
@@ -26,7 +26,25 @@ func init() {
 		"output",
 		"o",
 		"recolored.jpg",
-		"name of the file to output recolored image to",
+		"name of the file to output recolored image to.",
+	)
+
+	// [TODO] This felt clunky to explain how to use. Could there be a
+	// more intuitive way to parse luminance thresholds than in this
+	// format, or a simpler explanation of this CLI arg?
+	cmd.Flags().StringP(
+		"thresholds",
+		"t",
+		"0,000000,50,FFFFFF",
+		"comma-separated list of pairs of luminance percentages and hexadecimal colors, "+
+			"in the pattern 'luminancePercentage,color,luminancePercentage,color'. "+
+			"If a given pixel's luminance is above the n-th percentage, but below "+
+			"the next percentage in the list, then that pixel will be recolored to "+
+			"the n-th color. For example in the argument \"0,000000,50,FFFFFF\" a "+
+			"pixel with 25% luminance would be recolored to black (#000000) since "+
+			"it's above 0% luminance, while a pixel with 60% luminance would be "+
+			"recolored to white (#FFFFFF). Must have one luminance threshold of 0"+
+			"as a catch-all value.",
 	)
 }
 
@@ -81,7 +99,16 @@ func run(cmd *cobra.Command, args []string) {
 	}
 	defer out.Close()
 
-	recolored := recolor(img)
+	thresholdsArg, err := cmd.Flags().GetString("thresholds")
+	if err != nil {
+		log.Fatalf("error getting luminance thresholds CLI arg: %v", err)
+	}
+	thresholds, err := parseThresholds(thresholdsArg)
+	if err != nil {
+		log.Fatalf("error parsing luminance thresholds: %v", err)
+	}
+
+	recolored := recolor(img, thresholds)
 	if err := jpeg.Encode(out, recolored, nil); err != nil {
 		log.Fatalf("error outputting recolored image: %v", err)
 	}
